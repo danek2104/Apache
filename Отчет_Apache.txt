@@ -1,0 +1,221 @@
+﻿Пошаговое выполнение заданий:
+
+
+
+
+
+
+# 1. Установка Apache2
+bash
+sudo apt-get update
+sudo apt-get install apache2 -y
+
+
+
+
+
+
+
+
+# 2. Проверка приветствия Apache
+- На хостовой машине откройте браузер и перейдите по IP виртуальной машины:  
+  `http://<IP_ВМ>`
+- Должна появиться стандартная страница Apache "It works!".
+
+
+
+
+
+
+# 3. Изменение порта на 8080
+1. Откройте файл конфигурации портов:  
+   bash
+   sudo nano /etc/apache2/ports.conf
+   
+2. Замените `Listen 80` на `Listen 8080`.  
+3. Измените виртуальный хост:  
+   bash
+   sudo nano /etc/apache2/sites-available/000-default.conf
+   
+   Замените `<VirtualHost *:80>` на `<VirtualHost *:8080>`.  
+4. Перезапустите Apache:  
+   bash
+   sudo systemctl restart apache2
+   
+
+
+
+
+
+
+# 4. Проверка работы на порту 8080
+- В браузере хост-машины перейдите:  
+  `http://<IP_ВМ>:8080`  
+  Страница приветствия должна отображаться.
+
+
+
+
+
+
+# 5. Возврат порта 80 и проверка
+1. Верните настройки в `ports.conf` и `000-default.conf` к `Listen 80`.  
+2. Перезапустите Apache:  
+   bash
+   sudo systemctl restart apache2
+   
+3. Проверьте в браузере:  
+   `http://<IP_ВМ>` — снова должна быть страница приветствия.
+
+
+
+
+
+
+# 6. Запуск Apache на портах 80 и 8080 одновременно
+1. В `ports.conf` добавьте:  
+   apache
+   Listen 80
+   Listen 8080
+   
+2. Создайте копию конфига для порта 8080:  
+   bash
+   sudo cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/001-8080.conf
+   
+3. В `001-8080.conf` замените `*:80` на `*:8080`.  
+4. Активируйте конфиг и перезапустите Apache:  
+   bash
+   sudo a2ensite 001-8080.conf
+   sudo systemctl restart apache2
+   
+5. Проверьте:  
+   - `http://<IP_ВМ>:80`  
+   - `http://<IP_ВМ>:8080`  
+   Оба должны показывать приветствие.
+
+
+
+
+
+
+# 7. Настройка доменов в hosts хост-машины
+1. На хост-машине отредактируйте файл:  
+   - Windows: `C:\Windows\System32\drivers\etc\hosts`  
+   - Linux/macOS: `/etc/hosts`  
+2. Добавьте строки (замените `<IP_ВМ>` на реальный IP):  
+   
+   <IP_ВМ> a1.com
+   <IP_ВМ> b2.com
+   <IP_ВМ> c3.com
+   
+
+
+
+
+
+
+# 8. Проверка доменов ping
+На хост-машине выполните:  
+bash
+ping a1.com  # Должен отвечать <IP_ВМ>
+ping b2.com  # Должен отвечать <IP_ВМ>
+ping c3.com  # Должен отвечать <IP_ВМ>
+
+
+
+
+
+
+
+
+# 9. Проверка доменов в браузере
+Перейдите в браузере:  
+- `http://a1.com`  
+- `http://b2.com`  
+- `http://c3.com`  
+Должна открываться стандартная страница Apache.
+
+
+
+
+
+
+# 10. Создание директорий
+bash
+sudo mkdir /var/www/{a1.com,b2.com,c3.com}
+
+
+
+
+
+
+
+
+# 11. Создание index.html с разным содержимым
+1. Для `a1.com`:  
+   bash
+   echo "Site A1" | sudo tee /var/www/a1.com/index.html
+   
+2. Для `b2.com`:  
+   bash
+   echo "Site B2" | sudo tee /var/www/b2.com/index.html
+   
+3. Для `c3.com`:  
+   bash
+   echo "Site C3" | sudo tee /var/www/c3.com/index.html
+   
+
+
+
+
+
+
+# 12. Настройка виртуальных хостов
+1. Создайте конфиги для каждого домена:  
+   bash
+   sudo nano /etc/apache2/sites-available/a1.com.conf
+   
+   apache
+   <VirtualHost *:80>
+      ServerName a1.com
+      DocumentRoot /var/www/a1.com
+      ErrorLog ${APACHE_LOG_DIR}/error.log
+      CustomLog ${APACHE_LOG_DIR}/access.log combined
+   </VirtualHost>
+   
+   Аналогично для `b2.com.conf` и `c3.com.conf` (с заменой путей).  
+2. Активируйте сайты:  
+   bash
+   sudo a2ensite a1.com.conf b2.com.conf c3.com.conf
+   sudo a2dissite 000-default.conf  # Отключите стандартный хост
+   sudo systemctl restart apache2
+   
+
+
+
+
+
+
+# 13. Проверка работы сайтов
+В браузере хост-машины откройте:  
+- `http://a1.com` → "Site A1"  
+- `http://b2.com` → "Site B2"  
+- `http://c3.com` → "Site C3"  
+
+
+
+
+
+
+# 14. Запуск скрипта
+1. Создайте тестовый скрипт в любой директории, например:  
+   bash
+   echo "<?php echo 'Hello from PHP!'; ?>" | sudo tee /var/www/a1.com/test.php
+   
+2. Установите PHP (если нужно):  
+   bash
+   sudo apt-get install php libapache2-mod-php -y
+   sudo systemctl restart apache2
+   
+3. Проверьте в браузере:  
+   `http://a1.com/test.php` → "Hello from PHP!".
